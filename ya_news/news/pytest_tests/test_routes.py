@@ -12,7 +12,6 @@ from pytest_django.asserts import assertRedirects
         (pytest.lazy_fixture('admin_client'), HTTPStatus.NOT_FOUND),
         (pytest.lazy_fixture('anonymous'), HTTPStatus.FOUND),
         (pytest.lazy_fixture('author_client'), HTTPStatus.OK),
-        
     ),
 )
 @pytest.mark.parametrize(
@@ -28,13 +27,23 @@ from pytest_django.asserts import assertRedirects
     ),
 )
 def test_pages_availability_for_different_users(
-    name, news, args, args_comment, comment, expected_status, parametrized_client
+    name,
+    news,
+    args,
+    args_comment,
+    comment,
+    expected_status,
+    parametrized_client
 ):
     url = reverse(
-        name, args=((comment.id,) if args_comment else (news.id,) if args else None)
+        name, args=(
+            (comment.id,) if args_comment else (news.id,) if args else None
+        )
     )
     response = parametrized_client.get(url)
-    assert response.status_code == (expected_status if args_comment else HTTPStatus.OK)
+    assert response.status_code == (
+        expected_status if args_comment else HTTPStatus.OK
+    )
 
 
 @pytest.mark.parametrize(

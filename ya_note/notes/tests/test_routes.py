@@ -3,7 +3,6 @@ from http import HTTPStatus
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
-
 from notes.models import Note
 
 User = get_user_model()
@@ -25,33 +24,117 @@ class TestMajor(TestCase):
         cls.user = User.objects.create(username='Миролюб')
         cls.auth_client = Client()
         cls.auth_client.force_login(cls.user)
- 
-    def test_home_page(self): 
+
+    def test_home_page(self):
         users = (
-                self.author,
-                self.user,
-                self.client
+            self.author,
+            self.user,
+            self.client
         )
-        urls = ( 
-            ('notes:home', False, {self.author: HTTPStatus.OK, self.user: HTTPStatus.OK, self.client: HTTPStatus.OK}),
-            ('users:login', False, {self.author: HTTPStatus.OK, self.user: HTTPStatus.OK, self.client: HTTPStatus.OK}),
-            ('users:logout', False, {self.author: HTTPStatus.OK, self.user: HTTPStatus.OK, self.client: HTTPStatus.OK}),
-            ('users:signup', False, {self.author: HTTPStatus.OK, self.user: HTTPStatus.OK, self.client: HTTPStatus.OK}),
-            ('notes:add', False, {self.author: HTTPStatus.OK, self.user: HTTPStatus.OK, self.client: HTTPStatus.FOUND}),
-            ('notes:list', False, {self.author: HTTPStatus.OK, self.user: HTTPStatus.OK, self.client: HTTPStatus.FOUND}),
-            ('notes:success', False, {self.author: HTTPStatus.OK, self.user: HTTPStatus.OK, self.client: HTTPStatus.FOUND}),
-            ('notes:detail', True, {self.author: HTTPStatus.OK, self.user: HTTPStatus.NOT_FOUND, self.client: HTTPStatus.FOUND}),
-            ('notes:edit', True, {self.author: HTTPStatus.OK, self.user: HTTPStatus.NOT_FOUND, self.client: HTTPStatus.FOUND}),
-            ('notes:delete', True, {self.author: HTTPStatus.OK, self.user: HTTPStatus.NOT_FOUND, self.client: HTTPStatus.FOUND}),
+        urls = (
+            (
+                'notes:home',
+                False,
+                {
+                    self.author: HTTPStatus.OK,
+                    self.user: HTTPStatus.OK,
+                    self.client: HTTPStatus.OK,
+                }
+            ),
+            (
+                'users:login',
+                False,
+                {
+                    self.author: HTTPStatus.OK,
+                    self.user: HTTPStatus.OK,
+                    self.client: HTTPStatus.OK,
+                }
+            ),
+            (
+                'users:logout',
+                False,
+                {
+                    self.author: HTTPStatus.OK,
+                    self.user: HTTPStatus.OK,
+                    self.client: HTTPStatus.OK,
+                }
+            ),
+            (
+                'users:signup',
+                False,
+                {
+                    self.author: HTTPStatus.OK,
+                    self.user: HTTPStatus.OK,
+                    self.client: HTTPStatus.OK,
+                }
+            ),
+            (
+                'notes:add',
+                False,
+                {
+                    self.author: HTTPStatus.OK,
+                    self.user: HTTPStatus.OK,
+                    self.client: HTTPStatus.FOUND,
+                }
+            ),
+            (
+                'notes:list',
+                False,
+                {
+                    self.author: HTTPStatus.OK,
+                    self.user: HTTPStatus.OK,
+                    self.client: HTTPStatus.FOUND,
+                }
+            ),
+            (
+                'notes:success',
+                False,
+                {
+                    self.author: HTTPStatus.OK,
+                    self.user: HTTPStatus.OK,
+                    self.client: HTTPStatus.FOUND,
+                }
+            ),
+            (
+                'notes:detail',
+                True,
+                {
+                    self.author: HTTPStatus.OK,
+                    self.user: HTTPStatus.NOT_FOUND,
+                    self.client: HTTPStatus.FOUND,
+                }
+            ),
+            (
+                'notes:edit',
+                True,
+                {
+                    self.author: HTTPStatus.OK,
+                    self.user: HTTPStatus.NOT_FOUND,
+                    self.client: HTTPStatus.FOUND,
+                }
+            ),
+            (
+                'notes:delete',
+                True,
+                {
+                    self.author: HTTPStatus.OK,
+                    self.user: HTTPStatus.NOT_FOUND,
+                    self.client: HTTPStatus.FOUND,
+                }
+            ),
         )
         for user in users:
             for name, args, expected_status in urls:
                 if user != self.client:
                     self.auth_client.force_login(user)
-                with self.subTest(name=name): 
-                    url = reverse(name, args=((self.note.slug,) if args else None)) 
+                with self.subTest(name=name):
+                    url = reverse(
+                        name, args=((self.note.slug,) if args else None)
+                    )
                     response = self.auth_client.get(url)
-                    self.assertEqual(response.status_code, expected_status[user])
+                    self.assertEqual(
+                        response.status_code, expected_status[user]
+                    )
 
     def test_redirect_for_anonymous_client(self):
         login_url = reverse('users:login')
