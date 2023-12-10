@@ -64,6 +64,8 @@ class TestSlug(BaseClass):
             slug='test_slug_1',
             author=self.author,
         )
+        self.url_edit = reverse('notes:edit', args=(self.note.slug,))
+        self.url_delete = reverse('notes:delete', args=(self.note.slug,))
 
     def test_not_unique_slug(self):
         url = reverse('notes:add')
@@ -78,7 +80,7 @@ class TestSlug(BaseClass):
         self.assertEqual(Note.objects.count(), self.ONE_NOTE)
 
     def test_author_can_edit_note(self):
-        url = reverse('notes:edit', args=(self.note.slug,))
+        url = self.url_edit
         response = self.author_client.post(url, self.form_data)
         self.assertRedirects(response, reverse('notes:success'))
         self.note.refresh_from_db()
@@ -87,7 +89,7 @@ class TestSlug(BaseClass):
         self.assertEqual(self.note.slug, self.form_data['slug'])
 
     def test_other_user_cant_edit_note(self):
-        url = reverse('notes:edit', args=(self.note.slug,))
+        url = self.url_edit
         response = self.reader_client.post(url, self.form_data)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         note_from_db = Note.objects.get(slug=self.note.slug)
@@ -96,13 +98,13 @@ class TestSlug(BaseClass):
         self.assertEqual(self.note.slug, note_from_db.slug)
 
     def test_author_can_delete_note(self):
-        url = reverse('notes:delete', args=(self.note.slug,))
+        url = self.url_delete
         response = self.author_client.post(url)
         self.assertRedirects(response, reverse('notes:success'))
         self.assertEqual(Note.objects.count(), self.ZERO_NOTES)
 
     def test_other_user_cant_delete_note(self):
-        url = reverse('notes:delete', args=(self.note.slug,))
+        url = self.url_delete
         response = self.reader_client.post(url)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.assertEqual(Note.objects.count(), self.ONE_NOTE)
