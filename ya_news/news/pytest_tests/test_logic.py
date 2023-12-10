@@ -7,15 +7,17 @@ from pytest_django.asserts import assertFormError, assertRedirects
 from news.forms import BAD_WORDS, WARNING
 from news.models import Comment
 
-OLD_FORM_DATA = {'text': 'Привет'}
+OLD_FORM_DATA = {'text': 'Привет', }
 NEW_FORM_DATA = {'text': 'Новый текст', }
+ONE_COMMENT = 1
+ZERO_COMMENTS = 0
 pytestmark = pytest.mark.django_db
 
 
 def test_anonymous_user_cant_create_comment(client, news):
     url = reverse('news:detail', args=(news.id,))
     client.post(url, data=NEW_FORM_DATA)
-    assert Comment.objects.count() == 0
+    assert Comment.objects.count() == ZERO_COMMENTS
 
 
 def test_user_can_create_comment(
@@ -24,7 +26,7 @@ def test_user_can_create_comment(
     url = reverse('news:detail', args=(news.id,))
     response = admin_client.post(url, data=NEW_FORM_DATA)
     assertRedirects(response, f'{url}#comments')
-    assert Comment.objects.count() == 1
+    assert Comment.objects.count() == ONE_COMMENT
     comment = Comment.objects.get()
     assert comment.text == NEW_FORM_DATA['text']
     assert comment.news == news
@@ -42,7 +44,7 @@ def test_user_cant_use_bad_words(admin_client, news):
         errors=WARNING,
     )
     comments_count = Comment.objects.count()
-    assert comments_count == 0
+    assert comments_count == ZERO_COMMENTS
 
 
 def test_author_can_delete_comment(author_client, news, comment):
@@ -52,7 +54,7 @@ def test_author_can_delete_comment(author_client, news, comment):
     response = author_client.delete(delete_url)
     assertRedirects(response, url_to_comments)
     comments_count = Comment.objects.count()
-    assert comments_count == 0
+    assert comments_count == ZERO_COMMENTS
 
 
 def test_user_cant_delete_comment_of_another_user(admin_client, comment):
@@ -60,7 +62,7 @@ def test_user_cant_delete_comment_of_another_user(admin_client, comment):
     response = admin_client.delete(delete_url)
     assert response.status_code == HTTPStatus.NOT_FOUND
     comments_count = Comment.objects.count()
-    assert comments_count == 1
+    assert comments_count == ONE_COMMENT
     assert comment.text == OLD_FORM_DATA['text']
 
 
