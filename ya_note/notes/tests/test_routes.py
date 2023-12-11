@@ -8,6 +8,7 @@ from notes.models import Note
 
 User = get_user_model()
 
+
 class BaseClass(TestCase):
 
     LIST_URL = reverse('notes:list')
