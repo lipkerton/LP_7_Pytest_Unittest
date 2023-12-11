@@ -4,6 +4,7 @@ import pytest
 from django.conf import settings
 from django.test import Client
 from django.utils import timezone
+from django.urls import reverse
 
 from news.models import Comment, News
 
@@ -39,13 +40,11 @@ def news():
 @pytest.fixture
 def all_news():
     News.objects.bulk_create(
-        [
-            News(
-                title=f'Новость {index}',
-                text='Просто текст',
-                date=today - timedelta(days=index),
-            ) for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
-        ]
+        News(
+            title=f'Новость {index}',
+            text='Просто текст',
+            date=today - timedelta(days=index),
+        ) for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
     )
 
 
@@ -67,3 +66,23 @@ def all_comments(author, news):
         )
         comment.created = today - timedelta(days=index)
         comment.save()
+
+
+@pytest.fixture
+def news_home():
+    return reverse('news:home')
+
+
+@pytest.fixture
+def comment_delete(comment):
+    return reverse('news:delete', args=(comment.id,))
+
+
+@pytest.fixture
+def comment_edit(comment):
+    return reverse('news:edit', args=(comment.id,))
+
+
+@pytest.fixture
+def news_detail(news):
+    return reverse('news:detail', args=(news.id,))

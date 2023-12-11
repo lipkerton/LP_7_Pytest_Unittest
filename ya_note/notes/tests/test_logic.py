@@ -1,45 +1,23 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
 from django.urls import reverse
 from pytils.translit import slugify
 
 from notes.forms import WARNING
 from notes.models import Note
+from .test_routes import BaseClass
 
 User = get_user_model()
-
-
-class BaseClass(TestCase):
-
-    LIST_URL = reverse('notes:list')
-    ZERO_NOTES = 0
-    ONE_NOTE = 1
-
-    form_data = {
-        'title': 'Новый заголовок',
-        'text': 'Новый текст',
-        'slug': 'new-slug',
-    }
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = User.objects.create(username='Лев Толстой')
-        cls.author_client = Client()
-        cls.author_client.force_login(cls.author)
-        cls.reader = User.objects.create(username='Читатель')
-        cls.reader_client = Client()
-        cls.reader_client.force_login(cls.reader)
 
 
 class TestMajor(BaseClass):
 
     def test_user_can_create_note(self):
-        url = reverse('notes:add')
+        url = self.ADD_URL
         response = self.author_client.post(url, data=self.form_data)
         self.assertRedirects(response, reverse('notes:success'))
-        self.assertEqual(Note.objects.count(), self.ONE_NOTE)
+        self.assertEqual(Note.objects.count(), 1)
         new_note = Note.objects.get()
         self.assertEqual(new_note.title, self.form_data['title'])
         self.assertEqual(new_note.text, self.form_data['text'])
@@ -47,12 +25,12 @@ class TestMajor(BaseClass):
         self.assertEqual(new_note.author, self.author)
 
     def test_anonymous_user_cant_create_note(self):
-        url = reverse('notes:add')
+        url = self.ADD_URL
         response = self.client.post(url, data=self.form_data)
         login_url = reverse('users:login')
         expected_url = f'{login_url}?next={url}'
         self.assertRedirects(response, expected_url)
-        self.assertEqual(Note.objects.count(), self.ZERO_NOTES)
+        self.assertEqual(Note.objects.count(), 0)
 
 
 class TestSlug(BaseClass):
@@ -68,7 +46,7 @@ class TestSlug(BaseClass):
         self.url_delete = reverse('notes:delete', args=(self.note.slug,))
 
     def test_not_unique_slug(self):
-        url = reverse('notes:add')
+        url = self.ADD_URL
         self.form_data['slug'] = self.note.slug
         response = self.author_client.post(url, data=self.form_data)
         self.assertFormError(
@@ -77,7 +55,7 @@ class TestSlug(BaseClass):
             'slug',
             errors=f'{self.note.slug}{WARNING}',
         )
-        self.assertEqual(Note.objects.count(), self.ONE_NOTE)
+        self.assertEqual(Note.objects.count(), 1)
 
     def test_author_can_edit_note(self):
         url = self.url_edit
@@ -101,13 +79,13 @@ class TestSlug(BaseClass):
         url = self.url_delete
         response = self.author_client.post(url)
         self.assertRedirects(response, reverse('notes:success'))
-        self.assertEqual(Note.objects.count(), self.ZERO_NOTES)
+        self.assertEqual(Note.objects.count(), 0)
 
     def test_other_user_cant_delete_note(self):
         url = self.url_delete
         response = self.reader_client.post(url)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
-        self.assertEqual(Note.objects.count(), self.ONE_NOTE)
+        self.assertEqual(Note.objects.count(), 1)
         note_from_db = Note.objects.get(slug=self.note.slug)
         self.assertEqual(self.note.title, note_from_db.title)
         self.assertEqual(self.note.text, note_from_db.text)
@@ -117,11 +95,11 @@ class TestSlug(BaseClass):
 class TestEmptySlug(BaseClass):
 
     def test_empty_slug(self):
-        url = reverse('notes:add')
+        url = self.ADD_URL
         self.form_data.pop('slug')
         response = self.author_client.post(url, data=self.form_data)
         self.assertRedirects(response, reverse('notes:success'))
-        self.assertEqual(Note.objects.count(), self.ONE_NOTE)
+        self.assertEqual(Note.objects.count(), 1)
         new_note = Note.objects.get()
         expected_slug = slugify(self.form_data['title'])
         self.assertEqual(new_note.slug, expected_slug)

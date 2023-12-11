@@ -1,29 +1,20 @@
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
 from django.urls import reverse
 
 from notes.models import Note
+from .test_routes import BaseClass
 
 User = get_user_model()
 
 
-class TestMajor(TestCase):
+class TestMajor(BaseClass):
 
-    LIST_URL = reverse('notes:list')
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = User.objects.create(username='Лев Толстой')
-        cls.author_client = Client()
-        cls.author_client.force_login(cls.author)
-        cls.reader = User.objects.create(username='Читатель')
-        cls.reader_client = Client()
-        cls.reader_client.force_login(cls.reader)
-        cls.note = Note.objects.create(
+    def setUp(self):
+        self.note = Note.objects.create(
             title='Заметка',
             text='Просто текст.',
             slug='test_slug_1',
-            author=cls.author,
+            author=self.author,
         )
 
     def test_note_in_list_for_author(self):
